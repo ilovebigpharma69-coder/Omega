@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>⟠</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    :root{ --bg:#0a0907; --fg:#f8f4e8; --muted:#9a927c; --blood:#b30000; }
+    html,body{height:100%;margin:0}
+    body{display:grid;place-items:center;background:radial-gradient(circle at center,#0a0907 0%,#000 100%);color:var(--fg);font-family:"Cinzel",serif;letter-spacing:0.04em;overflow:hidden;animation:bgPulse 20s infinite ease-in-out;}
+
+    @keyframes bgPulse {
+      0%,100%{background:radial-gradient(circle at center,#0a0907 0%,#000 100%);}
+      50%{background:radial-gradient(circle at center,#1a1712 0%,#000 100%);}
+    }
+
+    .counter{font-weight:900;line-height:1;text-align:center;font-size:clamp(48px,22vw,220px);text-shadow:0 0 20px rgba(248,244,232,0.6),0 0 60px rgba(248,244,232,0.3);transition:all 0.15s ease;animation:subtlePulse 6s infinite ease-in-out;}
+    .counter .sep{opacity:0.7;padding:0 0.1em}
+
+    @keyframes subtlePulse {
+      0%,100%{transform:scale(1);opacity:1;}
+      50%{transform:scale(1.02);opacity:0.95;}
+    }
+
+    .glitch{position:relative;display:inline-block}
+    .glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;overflow:hidden;pointer-events:none;opacity:0.06;font-family:"Cinzel",serif;filter:blur(0.5px);}
+    .glitch::before{color:rgba(255,40,40,0.7);mix-blend-mode:screen;animation:gl1 4s infinite linear}
+    .glitch::after{color:rgba(120,180,255,0.7);mix-blend-mode:screen;animation:gl2 5s infinite linear}
+
+    @keyframes gl1{
+      0%,100%{transform:translate3d(0,0,0)}
+      20%{transform:translate3d(-1px,-1px,0)}
+      60%{transform:translate3d(1px,0,0)}
+    }
+    @keyframes gl2{
+      0%,100%{transform:translate3d(0,0,0)}
+      30%{transform:translate3d(1px,1px,0)}
+      70%{transform:translate3d(-1px,0,0)}
+    }
+
+    .six-flash{color:var(--blood) !important;text-shadow:0 0 30px rgba(179,0,0,1),0 0 70px rgba(179,0,0,0.8);animation:shake 0.25s infinite, sixGlitch 0.2s steps(2,end) infinite, subtlePulse 1.2s infinite;}
+    @keyframes shake {0%{transform:translate(0,0) rotate(0deg);}20%{transform:translate(-4px,0) rotate(-2deg);}40%{transform:translate(4px,0) rotate(2deg);}60%{transform:translate(-2px,0) rotate(-1deg);}80%{transform:translate(2px,0) rotate(1deg);}100%{transform:translate(0,0) rotate(0deg);}}
+    @keyframes sixGlitch {0%{clip-path: inset(0 0 80% 0);}50%{clip-path: inset(20% 0 40% 0);}100%{clip-path: inset(60% 0 0 0);}}
+    .mini{display:none;}
+    @media (prefers-reduced-motion: reduce){ .glitch::before,.glitch::after{animation:none;opacity:0} .six-flash{animation:none;} }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="mini" id="mini"></div>
+  <div class="counter" aria-live="polite">
+    <span id="count" class="glitch" data-text="">00:00</span>
+  </div>
+
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const paramSymbol = qs.get('symbol');
+    const SYMBOL = paramSymbol || 'Ω';
+    const flashInterval = parseInt(qs.get('flash')||77,10) * 1000;
+    const TARGET = new Date(2025,8,7,19,0,0,0);
+    const el = document.getElementById('count');
+
+    function sevenify(s){return s.replace(/7/g,SYMBOL);}
+    function pad(n){return String(n).padStart(2,'0');}
+    function fmt(ms){const sec=Math.max(0,Math.floor(ms/1000));const d=Math.floor(sec/86400);const h=Math.floor((sec%86400)/3600);const m=Math.floor((sec%3600)/60);const s=sec%60;if(d>0)return `${d}:${pad(h)}:${pad(m)}:${pad(s)}`;if(h>0)return `${h}:${pad(m)}:${pad(s)}`;return `${m}:${pad(s)}`;}
+    let lastFlash=Date.now();
+    let lastSixFlashHour=-1;
+
+    function update(){
+      const now = new Date();
+      const rem = TARGET - now;
+      const elapsed = Date.now() - lastFlash;
+      if(rem <= 0){ el.dataset.text = '0'; el.textContent = sevenify('0'); document.title = '0'; return; }
+      if(now.getSeconds()===10 && lastSixFlashHour!==now.getMinutes()){
+        el.dataset.text = '666666'; el.textContent = '666666';
+        el.classList.add('six-flash');
+        document.title = '6';
+        lastSixFlashHour = now.getMinutes();
+        setTimeout(()=>{ el.classList.remove('six-flash'); lastFlash = Date.now(); },1500);
+        return;
+      }
+      if(elapsed>=flashInterval){
+        el.dataset.text = SYMBOL.repeat(6);
+        el.textContent = SYMBOL.repeat(6);
+        document.title = SYMBOL;
+        setTimeout(()=>{ lastFlash = Date.now(); },1200);
+        return;
+      }
+      const t = fmt(rem);
+      el.dataset.text = t;
+      el.innerHTML = sevenify(t).replace(/:/g,'<span class="sep">:</span>');
+      document.title = t;
+    }
+    update();
+    setInterval(update,200);
+  </script>
+</body>
+</html>
